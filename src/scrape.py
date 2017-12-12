@@ -1,13 +1,27 @@
-from selenium import webdriver
-from bs4 import BeautifulSoup
+import urllib2
+import json
+import sys
+import argparse
 
-driver = webdriver.Chrome()
-url = "https://www.tigerair.com.au/deals"
-driver.get(url)
-source = driver.page_source
-soup = BeautifulSoup(source, 'html.parser')
-divs = soup.find_all('div', class_="special-deal-item")
+def main(arg):
 
-for div in divs:
-	attributes = div.find("a").attrs
-	print attributes['data-origin'] + " to " + attributes['data-destination']
+	dump = urllib2.urlopen("https://tigerair.com.au/api/fare_proposals.json?origin=&destination=&order=&travel=&pushlish_on=&preview=&page_type=standard&fare_type=Tactical&route=false").read()
+	deals = json.loads(dump)
+
+	deal_dict = {}
+
+	for deal in deals:
+		origin_name = deal["origin"]["name"]
+		destination_name = deal["destination"]["name"]
+		if origin_name in deal_dict:
+			deal_dict[origin_name].append(destination_name)
+		else:
+			deal_dict[origin_name] = [destination_name]
+
+	print deal_dict[vars(arg)["origin"]]
+
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--origin')
+	main(parser.parse_args())
